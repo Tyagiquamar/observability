@@ -93,4 +93,14 @@ describe('Transport', () => {
         // the queue after the throw rather than being dropped.
         expect(t._queueSize()).toBe(1);
     });
+
+    it('re-queues the batch when native fetch resolves a non-2xx response', async () => {
+        const fetcher = vi.fn().mockResolvedValue({ ok: false, status: 503 });
+        const t = new Transport({ dsn: 'https://example.com', maxBatchSize: 1, flushIntervalMs: 1000 }, { canBeacon: false, fetcher });
+        t.enqueue(evt('a'));
+        await vi.runOnlyPendingTimersAsync();
+        await Promise.resolve();
+        expect(fetcher).toHaveBeenCalled();
+        expect(t._queueSize()).toBe(1);
+    });
 });

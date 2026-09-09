@@ -81,12 +81,13 @@ export class Transport {
             // (`@smooai/fetch`) — it owns retries/timeouts/circuit-breaking.
             // Fall back to global fetch when no fetcher was injected (tests).
             const fetcher = this.adapter.fetcher ?? ((url, init) => fetch(url, init));
-            await fetcher(this.opts.dsn, {
+            const response = await fetcher(this.opts.dsn, {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify(payload),
                 keepalive: true,
             });
+            if (response.ok === false) throw new Error('ingest request failed');
         } catch {
             // Best-effort: push events back to the front of the queue for next attempt.
             this.queue.unshift(...batch);
